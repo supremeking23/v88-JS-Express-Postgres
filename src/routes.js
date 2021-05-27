@@ -1,15 +1,15 @@
-module.exports = (APP) => {
-	const user = require("./controllers/users.controller");
+module.exports = (app) => {
+	const user = require("./controllers/users");
 
-	APP.get("/", user.index);
+	app.get("/", user.index);
 
 	// APP.get("/register-and-login", user.register);
 
-	APP.get("/welcome", user.welcome);
+	app.get("/welcome", user.welcome);
 
-	APP.post("/create", user.create);
-	APP.post("/login_process", user.login_process);
+	app.post("/create", user.create);
+	app.post("/login_process", user.login_process);
 
-	APP.get("/welcome", user.welcome);
-	APP.get("/logoff", user.logoff);
+	app.get("/welcome", user.welcome);
+	app.get("/logoff", user.logoff);
 };

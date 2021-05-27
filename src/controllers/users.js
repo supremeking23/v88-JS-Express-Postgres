@@ -1,5 +1,5 @@
-const userModel = require("../models/users.model");
-const { validateEmail } = require("../my_module/utilities")();
+const userModel = require("../models/user");
+const { validateEmail, formError, messageHandler } = require("../my_module/utilities")();
 const { registrationValidation, loginValidation } = require("../my_module/validation")();
 const bcrypt = require("bcrypt");
 const saltRounds = 10;
@@ -21,13 +21,7 @@ class Users {
 
 			let form_error_array = registrationValidation(req.body, validateEmail);
 			if (form_error_array.length > 0) {
-				// req.session.form_errors = form_error_array;
-				let form_error = {
-					type: "register",
-					errors: form_error_array,
-				};
-				// req.session.form_errors = form_error_array;
-				req.session.form_errors = form_error;
+				req.session.form_errors = formError("register", form_error_array);
 				res.redirect("/");
 				return false;
 			}
@@ -35,26 +29,24 @@ class Users {
 			let user = await userModel.findByEmail(req.body.email);
 
 			// console.log(findEmail);
-			let message = {};
+			let message;
 			if (user.length > 0) {
 				//email already exist
-				message.title = "error";
-				message.content = "Error, email already in the database";
+				message = messageHandler("error", "Error, email already in the database");
 			} else {
 				// hash password
 
 				bcrypt.hash(req.body.password, saltRounds, async (err, hash) => {
 					req.body.password = hash;
+					let user_data = userModel.userData(req.body);
 
-					let new_user = new userModel(req.body);
-					let created_user = await userModel.create(new_user);
+					let created_user = await userModel.create(user_data);
 
 					console.log("return");
 					console.log(created_user);
 				});
 
-				message.title = "success";
-				message.content = "Success, a new user has been created";
+				message = messageHandler("success", "User has been registered successfully");
 			}
 
 			req.session.message = message;
@@ -69,12 +61,7 @@ class Users {
 			let form_error_array = loginValidation(req.body, validateEmail);
 
 			if (form_error_array.length > 0) {
-				let form_error = {
-					type: "login",
-					errors: form_error_array,
-				};
-
-				req.session.form_errors = form_error;
+				req.session.form_errors = formError("login", form_error_array);
 				res.redirect("/");
 				return false;
 			}
@@ -90,24 +77,14 @@ class Users {
 						res.redirect("/welcome");
 					} else {
 						console.log("wrong password");
-						let form_error = {
-							type: "login",
-							errors: ["Incorrect Email or Password"],
-						};
-
-						req.session.form_errors = form_error;
+						req.session.form_errors = formError("login", ["Wrong Email or Password"]);
 						res.redirect("/");
 						return false;
 					}
 				});
 			} else {
 				// wrone credentials
-				let form_error = {
-					type: "login",
-					errors: ["Incorrect Email or Password"],
-				};
-
-				req.session.form_errors = form_error;
+				req.session.form_errors = formError("login", ["Wrong Email or Password"]);
 				res.redirect("/");
 				return false;
 			}
